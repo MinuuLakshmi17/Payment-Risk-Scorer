@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf8">
+<title>Payment Risk Scorer Demo</title>
+</head>
+<body>
+<h1>Payment Risk Scorer Demo</h1>
+<p>Enter a payment and score it for fraud and compliance risk.</p>
+<label>Amount</label><br>
+<input id="amountInput" type="number" value="120"><br><br>
+<label>Merchant category</label><br>
+<select id="merchantInput">
+<option value="grocery">grocery</option>
+<option value="food">food</option>
+<option value="fashion">fashion</option>
+<option value="electronics">electronics</option>
+<option value="travel">travel</option>
+<option value="luxury">luxury</option>
+</select><br><br>
+<label>Country code</label><br>
+<input id="countryInput" type="text" value="US"><br><br>
+<label>Hour 0 to 23</label><br>
+<input id="hourInput" type="number" value="14"><br><br>
+<label>Device type</label><br>
+<select id="deviceInput">
+<option value="mobile">mobile</option>
+<option value="desktop">desktop</option>
+<option value="tablet">tablet</option>
+</select><br><br>
+<label>Velocity</label><br>
+<input id="velocityInput" type="number" value="1"><br><br>
+<button id="scoreButton">Score transaction</button>
+<div id="resultBox"></div>
+<script>
+document.getElementById("scoreButton").addEventListener("click", async function() {
+  var data = {
+    amount: parseFloat(document.getElementById("amountInput").value),
+    merchant_category: document.getElementById("merchantInput").value,
+    country: document.getElementById("countryInput").value,
+    hour: parseInt(document.getElementById("hourInput").value),
+    device_type: document.getElementById("deviceInput").value,
+    velocity: parseInt(document.getElementById("velocityInput").value)
+  };
+  var box = document.getElementById("resultBox");
+  box.textContent = "Scoring";
+  try {
+    var res = await fetch("/score", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    var out = await res.json();
+    if (!res.ok) {
+      box.textContent = "Error: " + JSON.stringify(out);
+      return;
+    }
+    var reasons = out.reasons.map(function(r) { return r.text; }).join(" ");
+    box.textContent = "Score " + out.score + " Level " + out.risk_level + " Reasons " + reasons;
+  } catch (e) {
+    box.textContent = "Request failed";
+  }
+});
+</script>
+</body>
+</html>

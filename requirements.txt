@@ -1,0 +1,7 @@
+torch
+fastapi
+uvicorn
+httpx
+numpy
+pytest
+pydantic
