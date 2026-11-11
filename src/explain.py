@@ -1,7 +1,12 @@
 import numpy as np
-import torch
+
+try:
+    import torch
+except Exception:
+    torch = None
 
 from src.generator import HIGH_RISK_COUNTRIES, HIGH_RISK_MERCHANTS, NIGHT_HOURS, encode_single
+from src.light_model import light_predict
 
 HIGH_AMOUNT = 500.0
 VERY_HIGH_AMOUNT = 1000.0
@@ -67,10 +72,10 @@ def apply_scaler(x, scaler_mean, scaler_std):
     return y
 
 
-def score_transaction(transaction, model=None, scaler_mean=None, scaler_std=None):
+def score_transaction(transaction, model=None, scaler_mean=None, scaler_std=None, light_weights=None):
     reasons = reason_codes(transaction)
     score = None
-    if model is not None and scaler_mean is not None and scaler_std is not None:
+    if model is not None and scaler_mean is not None and scaler_std is not None and torch is not None:
         try:
             raw = encode_single(transaction)
             scaled = apply_scaler(raw, scaler_mean, scaler_std)
@@ -79,6 +84,13 @@ def score_transaction(transaction, model=None, scaler_mean=None, scaler_std=None
                 tensor = torch.tensor(scaled, dtype=torch.float32).unsqueeze(0)
                 logits = model(tensor)
                 score = float(torch.sigmoid(logits).item())
+        except Exception:
+            score = None
+    if score is None and light_weights is not None:
+        try:
+            raw = encode_single(transaction)
+            scaled = apply_scaler(raw, light_weights["scaler_mean"], light_weights["scaler_std"])
+            score = float(light_predict(light_weights, scaled))
         except Exception:
             score = None
     if score is None:

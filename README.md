@@ -33,7 +33,13 @@ Payment teams need to spot fraud and compliance risk fast, without blocking good
 * tests/test_explain.py tests the reasons
 * tests/test_api.py tests the API
 * requirements.txt lists the packages
+* requirements_light.txt lists only the packages needed to run the API without PyTorch
+* render.yaml is the Render blueprint for live hosting
+* Dockerfile is an optional container setup for the light runtime
+* src/light_model.py runs the same model with NumPy only, using the weights file
+* export_weights.py converts the trained model to the weights file
 * models/model.pt is the trained model, made by train.py
+* models/weights.json holds the trained weights as plain JSON, made by train.py
 * models/metrics.json holds the measured metrics, made by train.py
 
 ## Install
@@ -55,6 +61,7 @@ python train.py
 ```
 
 * Training makes synthetic data, trains the model, and writes the model and metrics
+* Training also writes the light weights file, so the live API can use the same weights without PyTorch
 * The metrics file holds the real results from that run, with the test set size and the fraud rate
 
 ## Run the API
@@ -76,6 +83,22 @@ http://localhost:8000
 * The score endpoint is POST /score
 * Send amount, merchant category, country, hour, device type, and velocity
 * The response has score, risk level, and reasons
+
+## Live Hosting
+
+* The API can run live on Render on the free tier
+* The repo includes a Render blueprint file named render.yaml
+* Render installs only the light requirements file, so the deploy stays small and fast
+* The light path uses the same trained weights, stored as plain JSON, so scores match the PyTorch model
+* The full requirements file is still used for training, which needs PyTorch
+* To deploy, create a free Render account, create a new web service from the GitHub repo, and choose the blueprint file when Render asks for it
+* Render will show a live web service URL on the dashboard after deploy
+* Open that URL in a browser to see the demo page
+* The health check lives at the live URL with health added at the end
+* To point the demo page at the live API from another host, set API_BASE_URL at the top of static/index.html to the live web service URL, then redeploy the demo page
+* If the demo page is served by the same API service, leave API_BASE_URL empty and it will use the same host
+* The free tier may sleep after inactivity, so the first request after a pause can be slow
+* The trained model file is not pushed to GitHub, because it is binary. Run train.py once after cloning to make it, or use the light weights file, which is pushed and works without PyTorch
 
 ## Run the tests
 

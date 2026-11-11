@@ -52,6 +52,9 @@ def main():
     comp_metrics["roc_auc"] = float(__import__("src.model", fromlist=["roc_auc_score"]).roc_auc_score(y_comp_test, test_scores))
     comp_metrics["pr_auc"] = float(__import__("src.model", fromlist=["pr_auc_score"]).pr_auc_score(y_comp_test, test_scores))
     save_model(model, FEATURE_NAMES, mean, std, str(models_dir / "model.pt"))
+    from export_weights import export_weights
+
+    export_weights(models_dir / "model.pt", models_dir / "weights.json")
     out = {
         "n": int(N),
         "seed": int(SEED),
